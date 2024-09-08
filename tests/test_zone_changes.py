@@ -9,7 +9,7 @@ difference change function as a parameter.
 import pytest
 from boto.route53.record import Record
 
-from helpers import (
+from tests.helpers import (
     assert_changes_eq,
     diff_zone,
     diff_zone_upsert)
