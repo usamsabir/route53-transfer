@@ -131,3 +131,53 @@ def test_two_chained_aliases_resolved_in_three_updates():
     change_dict = third_update.changes[0]["change_dict"]
     assert change_dict["name"] == "server3"
     assert change_dict["alias_dns_name"] == "server2"
+
+def test_valid_ipv4():
+    zone = {'ipv4': '192.168.1.1'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == True, f"Expected True but got {result}"
+
+def test_invalid_ipv4_out_of_range():
+    zone = {'ipv4': '256.256.256.256'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == False, f"Expected False but got {result}"
+
+def test_valid_domain():
+    zone = {'domain': 'example.com'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == True, f"Expected True but got {result}"
+
+def test_invalid_domain_leading_hyphen():
+    zone = {'domain': '-example.com'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == False, f"Expected False but got {result}"
+
+def test_incomplete_ipv4():
+    zone = {'ipv4': '192.168.1'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == False, f"Expected False but got {result}"
+
+def test_domain_with_trailing_dot():
+    zone = {'domain': 'example.com.'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == False, f"Expected False but got {result}"
+
+def test_valid_localhost_ipv4():
+    zone = {'ipv4': '127.0.0.1'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == True, f"Expected True but got {result}"
+
+def test_domain_with_consecutive_dots():
+    zone = {'domain': 'example..com'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == False, f"Expected False but got {result}"
+
+def test_ipv4_with_leading_zeroes():
+    zone = {'ipv4': '192.168.001.001'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == False, f"Expected True but got {result}"
+
+def test_domain_with_invalid_character():
+    zone = {'domain': '!example.com'}
+    result = changes_to_r53_complex_parser(zone)
+    assert result == False, f"Expected False but got {result}"
