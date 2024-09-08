@@ -10,6 +10,7 @@ from boto import route53
 from boto import connect_s3
 from boto.route53.record import Record, ResourceRecordSets
 from boto.s3.key import Key
+import re
 
 ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", datetime.utcnow().utctimetuple())
 
@@ -477,6 +478,58 @@ def up_to_s3(con, file, s3_bucket):
     bucket_key = Key(bucket)
     bucket_key.key = file
     bucket_key.set_contents_from_filename(file, num_cb=10)
+
+def changes_to_r53_complex_parser(input_dict):
+    for key, value in input_dict.items():
+        if key == 'ipv4':
+            if not is_valid_ipv4(value):
+                return False
+        elif key == 'domain':
+            if not is_valid_domain(value):
+                return False
+    return True
+
+def is_valid_ipv4(ip):
+    # Check for valid IPv4 format
+    pattern = r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$'
+    match = re.match(pattern, ip)
+    if not match:
+        return False
+
+    # Check for out-of-range values
+    parts = [int(part) for part in match.groups()]
+    if any(part < 0 or part > 255 for part in parts):
+        return False
+
+    # Check for leading zeroes
+    if any(part.startswith('0') and len(part) > 1 for part in match.groups()):
+        return False
+
+    # Check for incomplete IPv4 address
+    if any(part == '' for part in match.groups()):
+        return False
+
+    return True
+
+def is_valid_domain(domain):
+    # Check for valid domain format
+    pattern = r'^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)*((?!-)[A-Za-z0-9-]{1,63}(?<!-))$'
+    if not re.match(pattern, domain):
+        return False
+
+    # Check for leading or trailing hyphens
+    if domain.startswith('-') or domain.endswith('-'):
+        return False
+
+    # Check for consecutive dots
+    if '..' in domain:
+        return False
+
+    # Check for invalid characters
+    if not all(c.isalnum() or c == '-' or c == '.' for c in domain):
+        return False
+
+    return True
 
 
 def run(params):

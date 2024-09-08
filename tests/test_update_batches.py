@@ -5,6 +5,7 @@ Unit tests for the route53 change batch computation
 from boto.route53.record import Record
 
 from route53_transfer.app import changes_to_r53_updates
+from route53_transfer.app import changes_to_r53_complex_parser
 from helpers import to_comparable
 
 
