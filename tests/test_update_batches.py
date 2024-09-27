@@ -5,7 +5,7 @@ Unit tests for the route53 change batch computation
 from boto.route53.record import Record
 
 from route53_transfer.app import changes_to_r53_updates
-from helpers import to_comparable
+from tests.helpers import to_comparable
 
 
 TEST_ZONE_ID = 1
