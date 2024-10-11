@@ -455,7 +455,41 @@ def record_to_stringlist(r: Record) -> list:
     return out_lines
 
 
-def record_short_summary(r: Record) -> str:
+def is_valid(key, value):
+    if key == 'ipv4':
+        octets = value.split('.')
+        if len(octets) != 4:
+            return False
+        for octet in octets:
+            if not octet.isdigit() or not 0 <= int(octet) <= 255 or (octet != "0" and octet.startswith("0")):
+                return False
+        return True
+    elif key == 'ipv6':
+        if value == '::1':
+            return True
+
+        groups = value.split(':')
+        if len(groups) > 8:
+            return False
+        double_colon_count = groups.count('')
+        if double_colon_count > 1:
+            return False
+        if double_colon_count == 1 and (groups[0] != '' or groups[-1] != ''):
+            return False
+        for group in groups:
+            if group == '':
+                continue
+            if len(group) > 4:
+                return False
+            for char in group:
+                if not (char.isdigit() or 'a' <= char.lower() <= 'f'):
+                    return False
+        return True
+    else:
+        return False
+
+
+def record_short_summary(r: Record, content) -> str:
     """
     Given a R53 resource record, returns a short string summary of it.
 
@@ -465,10 +499,14 @@ def record_short_summary(r: Record) -> str:
     :param r: R53 resource record
     :return: short summary string of the input record
     """
-    if r.alias_dns_name:
-        return f"{r.name} {r.type} ALIAS:{r.alias_hosted_zone_id}:{r.alias_dns_name} {r.ttl}"
-    else:
-        return f"{r.name} {r.type} {r.resource_records} {r.ttl}"
+    for key, value in content.items():
+        if is_valid(key, value):
+            if r.alias_dns_name:
+                return f"{r.name} {r.type} ALIAS:{r.alias_hosted_zone_id}:{r.alias_dns_name} {r.ttl}"
+            else:
+                return f"{r.name} {r.type} {r.resource_records} {r.ttl}"
+        else:
+            return ""
 
 
 def up_to_s3(con, file, s3_bucket):
